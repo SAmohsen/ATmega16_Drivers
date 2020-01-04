@@ -5,84 +5,150 @@
  *      Author: sayed
  */
 
-
 #include "PWM.h"
 
-static Pwm_ConfigType *Pwm_configurations = NULL_PTR;
+static Pwm_ConfigType *Pwm_configurChannel = NULL_PTR;
 
-void Pwm_Init(const Pwm_ConfigType* ConfigPtr ){
-	boolean error = FALSE ;
-	if (NULL_PTR==ConfigPtr)
+void Pwm_Init(const Pwm_ConfigType *config_Ptr) {
+	if (NULL_PTR != config_Ptr)
 	{
-		error = TRUE;
-	}
-	else
-	{
-
-	}
-	if (FALSE == error)
-	{
-		Pwm_configurations=ConfigPtr;
-		switch(Pwm_configurations->mode)
+		Pwm_configurChannel=config_Ptr;
+		if (channelA == Pwm_configurChannel->pwmchannel)
 		{
-		case non_inverting_mode:SET_BIT(TCCR1A,COM1A1);
-								CLR_BIT(TCCR1A,COM1A0);
-								SET_BIT(TCCR1A,COM1B1);
-								CLR_BIT(TCCR1A,COM1B0);
+			OCR1A = Pwm_configurChannel->compareValue;/*set compare Value*/
+			/*Set Channel Wave Generation Mode*/
+			switch (Pwm_configurChannel->genrationmode)
+			{
+			case non_inverting_mode:SET_BIT(TCCR1A, COM1A1);
+									CLR_BIT(TCCR1A, COM1A0);
+			break;
 
-		break;
+			case inverting_mode:SET_BIT(TCCR1A, COM1A1);
+				                SET_BIT(TCCR1A, COM1A0);
+			break;
+			}
 
-		case inverting_mode:SET_BIT(TCCR1A,COM1A1);
-							SET_BIT(TCCR1A,COM1A0);
-							SET_BIT(TCCR1A,COM1B1);
-							SET_BIT(TCCR1A,COM1B0);
-		break;
+
 		}
-
-		/*OCR1A TOP*/
-		SET_BIT(TCCR1A,WGM10);
-		SET_BIT(TCCR1A,WGM11);
-		SET_BIT(TCCR1B,WGM12);
-		CLR_BIT(TCCR1B,WGM13);
-
-		switch(Pwm_configurations->prescale)
+		else if(ChannelB==Pwm_configurChannel->pwmchannel)
 		{
-		case Pwm_no_prescale: SET_BIT(TCCR1B,CS10);
-						      CLR_BIT(TCCR1B,CS11);
-						      CLR_BIT(TCCR1B,CS12);
-		break;
-		case Pwm_Prescale_8:  CLR_BIT(TCCR1B,CS10);
-						  	  SET_BIT(TCCR1B,CS11);
-						  	  CLR_BIT(TCCR1B,CS12);
-		break;
+			OCR1B = Pwm_configurChannel->compareValue;/*set compare Value*/
+			/*Set Channel Wave Generation Mode*/
+			switch (Pwm_configurChannel->genrationmode)
+			{
+			case non_inverting_mode:SET_BIT(TCCR1A,COM1B1);
+									CLR_BIT(TCCR1A,COM1B0);
+			break;
 
-		case Pwm_Prescale_64: SET_BIT(TCCR1B,CS10);
-						      SET_BIT(TCCR1B,CS11);
-						      CLR_BIT(TCCR1B,CS12);
-		break;
+			case inverting_mode:SET_BIT(TCCR1A,COM1B1);
+								SET_BIT(TCCR1A,COM1B0);
+			break;
+			}
 
-		case Pwm_Prescale_256: CLR_BIT(TCCR1B,CS10);
-						       CLR_BIT(TCCR1B,CS11);
-						       SET_BIT(TCCR1B,CS12);
-		break;
-		case Pwm_Prescale_1024: SET_BIT(TCCR1B,CS10);
-							    CLR_BIT(TCCR1B,CS11);
-							    SET_BIT(TCCR1B,CS12);
-
-
-		break;
 		}
-		TCNT1 = 0 ;
+		else
+		{
+			/*no Action Required*/
+		}
+		/*set PWM Top Value*/
+		if (FastPwm == Pwm_configurChannel->pwmMode) {
+			switch (Pwm_configurChannel->top) {
+			case pwm_top_255:
+				SET_BIT(TCCR1A, WGM10);
+				CLR_BIT(TCCR1A, WGM11);
+				SET_BIT(TCCR1B, WGM12);
+				CLR_BIT(TCCR1B, WGM13);
+				break;
+			case pwm_top_511:
+				CLR_BIT(TCCR1A, WGM10);
+				SET_BIT(TCCR1A, WGM11);
+				SET_BIT(TCCR1B, WGM12);
+				CLR_BIT(TCCR1B, WGM13);
+				break;
+			case pwm_top_1023:
+				SET_BIT(TCCR1A, WGM10);
+				SET_BIT(TCCR1A, WGM11);
+				SET_BIT(TCCR1B, WGM12);
+				CLR_BIT(TCCR1B, WGM13);
+				break;
+			case pwm_top_ICR1:
+				CLR_BIT(TCCR1A, WGM10);
+				SET_BIT(TCCR1A, WGM11);
+				SET_BIT(TCCR1B, WGM12);
+				SET_BIT(TCCR1B, WGM13);
 
-	}
-	else
-	{
+				break;
+			case pwm_top_OCR1A:
+				SET_BIT(TCCR1A, WGM10);
+				SET_BIT(TCCR1A, WGM11);
+				SET_BIT(TCCR1B, WGM12);
+				SET_BIT(TCCR1B, WGM13);
+				break;
+			}
+		}
+		else if (phasecorrect==Pwm_configurChannel->top)
+		{
+			switch (Pwm_configurChannel->top) {
+			case pwm_top_255:
+				SET_BIT(TCCR1A, WGM10);
+				CLR_BIT(TCCR1A, WGM11);
+				CLR_BIT(TCCR1B, WGM12);
+				CLR_BIT(TCCR1B, WGM13);
+				break;
+			case pwm_top_511:
+				CLR_BIT(TCCR1A, WGM10);
+				SET_BIT(TCCR1A, WGM11);
+				CLR_BIT(TCCR1B, WGM12);
+				CLR_BIT(TCCR1B, WGM13);
+				break;
+			case pwm_top_1023:
+				SET_BIT(TCCR1A, WGM10);
+				SET_BIT(TCCR1A, WGM11);
+				CLR_BIT(TCCR1B, WGM12);
+				CLR_BIT(TCCR1B, WGM13);
+				break;
+			case pwm_top_ICR1:
+				CLR_BIT(TCCR1A, WGM10);
+				SET_BIT(TCCR1A, WGM11);
+				CLR_BIT(TCCR1B, WGM12);
+				SET_BIT(TCCR1B, WGM13);
+
+				break;
+			case pwm_top_OCR1A:
+				SET_BIT(TCCR1A, WGM10);
+				SET_BIT(TCCR1A, WGM11);
+				CLR_BIT(TCCR1B, WGM12);
+				SET_BIT(TCCR1B, WGM13);
+				break;
+			}
+		}
+		else
+		{
+			/*no action required*/
+		}
+		TCCR1B = (TCCR1B & 0xF8) | (Pwm_configurChannel->prescale);/*set timer1 PRESCALE value */
+		TCNT1 = 0; /*timer1 Initial Value*/
 
 	}
 }
 
 
-void Pwm_SetOCR1A( Pwm_DutyCycleType DutyCycle ){
-OCR1B = DutyCycle;
+void Pwm_setCompareValue(Pwm_compareValueType DutyCycle) {
+	if (channelA == Pwm_configurChannel->pwmchannel) {
+		OCR1A = DutyCycle;
+
+	} else if (channelA == Pwm_configurChannel->pwmchannel) {
+		OCR1B = DutyCycle;
+
+	} else {
+
+	}
 }
 
+void Pwm_deInit(){
+	TCNT1= 0 ;
+	OCR1A = 0 ;
+	OCR1B = 0 ;
+	TCCR1A =0 ;
+	TCCR1B = 0 ;
+}
